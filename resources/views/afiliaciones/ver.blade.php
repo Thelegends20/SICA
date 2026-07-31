@@ -20,13 +20,27 @@
 
     <div class="d-flex gap-2">
 
-        <a href="{{ route('credenciales.create', $afiliacion->id) }}"
-           class="btn btn-primary">
+        <@if($afiliacion->credencial)
 
-            <i class="bi bi-person-badge"></i>
-            Generar Credencial
+         <a href="{{ route('credenciales.show', $afiliacion->credencial->id) }}"
+            class="btn btn-primary">
 
-        </a>
+        <i class="bi bi-person-badge"></i>
+        Ver Credencial
+
+    </a>
+
+        @else
+
+         <a href="{{ route('credenciales.create', $afiliacion->id) }}"
+            class="btn btn-primary">
+
+        <i class="bi bi-person-badge"></i>
+        Generar Credencial
+
+         </a>
+
+@endif
 
 
         <span class="badge bg-success fs-6 d-flex align-items-center">
@@ -44,7 +58,57 @@
     <!-- DATOS DEL AFILIADO -->
 
     <div class="col-lg-5">
+    <div class="card mb-4">
 
+    <div class="card-header bg-dark text-white">
+
+        <i class="bi bi-person-badge"></i>
+
+        Credencial
+
+    </div>
+
+
+    <div class="card-body">
+
+        @if($afiliacion->credencial)
+
+            <p>
+                <strong>Folio:</strong>
+                {{ $afiliacion->credencial->folio_credencial }}
+            </p>
+
+            <p>
+                <strong>Estatus:</strong>
+                <span class="badge bg-success">
+                    {{ $afiliacion->credencial->estatus }}
+                </span>
+            </p>
+
+            <p>
+                <strong>Vigencia:</strong>
+                {{ $afiliacion->credencial->vigencia }}
+            </p>
+
+            <a href="{{ route('credenciales.show',$afiliacion->credencial->id) }}"
+               class="btn btn-primary">
+
+                <i class="bi bi-eye"></i>
+                Ver Credencial
+
+            </a>
+
+        @else
+
+            <div class="alert alert-warning">
+                Este afiliado aún no cuenta con credencial.
+            </div>
+
+        @endif
+
+    </div>
+
+</div>
 
         <div class="card mb-4">
 

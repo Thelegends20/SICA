@@ -13,37 +13,75 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
+
+    'name',
+
+    'email',
+
+    'password',
+
+    'rol',
+
+    'activo',
+
+    'telefono',
+
+    'municipio',
+
+];
+
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
+     * Campos ocultos.
      */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
+
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Conversiones automáticas.
      */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'activo' => 'boolean',
         ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Métodos de roles
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function esAdministradorPrincipal(): bool
+    {
+        return $this->rol === 'ADMIN_PRINCIPAL';
+    }
+
+
+    public function esAdministradorAuxiliar(): bool
+    {
+        return $this->rol === 'ADMIN_AUXILIAR';
+    }
+
+
+    public function esCoordinador(): bool
+    {
+        return $this->rol === 'COORDINADOR';
+    }
+
+
+    public function estaActivo(): bool
+    {
+        return $this->activo === true;
     }
 }

@@ -2,7 +2,7 @@
 
 @section('contenido')
 
-<h1 style="color:red">PRUEBA VEHÍCULOS</h1>
+<h1 style="color:red">VEHÍCULOS AFILIADOS</h1>
 
 <div class="container mt-4">
 
