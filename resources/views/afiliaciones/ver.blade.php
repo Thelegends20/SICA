@@ -1,411 +1,128 @@
 @extends('layouts.sica')
 
-@section('titulo', 'Expediente de afiliado')
+@section('titulo', 'Expediente del afiliado')
 
 @section('contenido')
-
-<div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-3">
-    <div>
-        <h1>Expediente de afiliado</h1>
-        <p>Consulta general del registro dentro de SICA.</p>
-    </div>
-
-    <div class="d-flex gap-2 flex-wrap">
-        <a href="{{ url('/afiliaciones') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-2"></i>
-            Regresar
-        </a>
-
-        @if(isset($afiliado) && isset($afiliado->id))
-            <a
-                href="{{ url('/afiliaciones/' . $afiliado->id . '/editar') }}"
-                class="btn btn-outline-primary"
-            >
-                <i class="bi bi-pencil me-2"></i>
-                Editar
-            </a>
-        @endif
-    </div>
-</div>
-
 
 @php
     $registro = $afiliado ?? $afiliacion ?? null;
 
-    $estatus = strtolower($registro->estatus ?? 'activo');
+    $vehiculos = $registro?->vehiculos ?? collect();
 
-    $badge = match($estatus) {
-        'activo' => 'success',
-        'inactivo' => 'secondary',
-        'suspendido' => 'warning',
-        'baja' => 'danger',
-        default => 'secondary',
-    };
+    $credenciales = $registro?->credenciales ?? collect();
+
+    $credencialActiva = $credenciales
+        ->sortByDesc('id')
+        ->first();
+
+    $estatus = strtoupper($registro->estatus ?? 'SIN ESTATUS');
 @endphp
 
 
-@if($registro)
+@if(!$registro)
 
-<div class="row g-4">
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        No se encontró el expediente solicitado.
+    </div>
 
-    <div class="col-12 col-xl-8">
+@else
 
-        <div class="card card-sica mb-4">
+    {{-- CABECERA DEL EXPEDIENTE --}}
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
 
-            <div class="card-header bg-white border-0 pt-4 px-4">
+        <div>
+            <h4 class="mb-1 fw-bold">
+                {{ $registro->nombre }}
+            </h4>
 
-                <div class="d-flex align-items-center gap-3">
+            <div class="text-muted small">
+                Expediente SICA
 
-                    <div
-                        class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center"
-                        style="width:58px;height:58px;min-width:58px;"
-                    >
-                        <i class="bi bi-person fs-3"></i>
-                    </div>
-
-                    <div class="flex-grow-1">
-
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
-
-                            <h4 class="fw-bold mb-0">
-                                {{ $registro->nombre ?? 'Sin nombre' }}
-                            </h4>
-
-                            <span class="badge text-bg-{{ $badge }}">
-                                {{ ucfirst($estatus) }}
-                            </span>
-
-                        </div>
-
-                        <div class="text-muted mt-1">
-                            {{ $registro->folio_afiliado ?? 'Folio no asignado' }}
-                        </div>
-
-                    </div>
-
-                </div>
-
+                @if(!empty($registro->folio_afiliado))
+                    · {{ $registro->folio_afiliado }}
+                @endif
             </div>
-
-
-            <div class="card-body p-4">
-
-                <div class="row g-4">
-
-                    <div class="col-12 col-md-6">
-
-                        <div class="text-muted small">
-                            CURP
-                        </div>
-
-                        <div class="fw-bold">
-                            {{ $registro->curp ?? 'No registrada' }}
-                        </div>
-
-                    </div>
-
-
-                    <div class="col-12 col-md-6">
-
-                        <div class="text-muted small">
-                            RFC
-                        </div>
-
-                        <div class="fw-bold">
-                            {{ $registro->rfc ?? 'No registrado' }}
-                        </div>
-
-                    </div>
-
-
-                    <div class="col-12 col-md-6">
-
-                        <div class="text-muted small">
-                            INE
-                        </div>
-
-                        <div class="fw-bold">
-                            {{ $registro->ine ?? 'No registrada' }}
-                        </div>
-
-                    </div>
-
-
-                    <div class="col-12 col-md-6">
-
-                        <div class="text-muted small">
-                            Teléfono
-                        </div>
-
-                        <div class="fw-bold">
-                            {{ $registro->telefono ?? 'No registrado' }}
-                        </div>
-
-                    </div>
-
-
-                    <div class="col-12">
-
-                        <div class="text-muted small">
-                            Correo electrónico
-                        </div>
-
-                        <div class="fw-bold">
-                            {{ $registro->correo ?? 'No registrado' }}
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
         </div>
 
 
-        <div class="card card-sica mb-4">
+        <div class="d-flex flex-wrap gap-2">
 
-            <div class="card-header bg-white border-0 pt-4 px-4">
+            <a
+                href="{{ url('/afiliaciones') }}"
+                class="btn btn-sm btn-outline-secondary"
+            >
+                <i class="bi bi-arrow-left me-1"></i>
+                Volver
+            </a>
 
-                <div class="d-flex align-items-center gap-3">
-
-                    <div
-                        class="rounded-3 bg-primary-subtle text-primary d-flex align-items-center justify-content-center"
-                        style="width:48px;height:48px;"
-                    >
-                        <i class="bi bi-geo-alt fs-4"></i>
-                    </div>
-
-                    <div>
-                        <h5 class="fw-bold mb-1">
-                            Domicilio
-                        </h5>
-
-                        <p class="text-muted small mb-0">
-                            Ubicación registrada del afiliado.
-                        </p>
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <div class="card-body p-4">
-
-                <div class="row g-4">
-
-                    <div class="col-12">
-
-                        <div class="text-muted small">
-                            Domicilio
-                        </div>
-
-                        <div class="fw-bold">
-                            {{ $registro->domicilio ?? 'No registrado' }}
-                        </div>
-
-                    </div>
-
-
-                    <div class="col-12 col-md-6">
-
-                        <div class="text-muted small">
-                            Municipio
-                        </div>
-
-                        <div class="fw-bold">
-                            {{ $registro->municipio ?? 'No registrado' }}
-                        </div>
-
-                    </div>
-
-
-                    <div class="col-12 col-md-6">
-
-                        <div class="text-muted small">
-                            Estado
-                        </div>
-
-                        <div class="fw-bold">
-                            {{ $registro->estado ?? 'No registrado' }}
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="card card-sica">
-
-            <div class="card-header bg-white border-0 pt-4 px-4">
-
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-
-                    <div>
-                        <h5 class="fw-bold mb-1">
-                            Vehículos vinculados
-                        </h5>
-
-                        <p class="text-muted small mb-0">
-                            Unidades relacionadas con este afiliado.
-                        </p>
-                    </div>
-
-                    @if(isset($registro->id))
-                        <a
-                            href="{{ url('/vehiculos/nuevo?afiliado_id=' . $registro->id) }}"
-                            class="btn btn-sm btn-sica"
-                        >
-                            <i class="bi bi-car-front me-2"></i>
-                            Agregar vehículo
-                        </a>
-                    @endif
-
-                </div>
-
-            </div>
-
-
-            <div class="card-body p-4">
-
-                @php
-                    $vehiculos = $registro->vehiculos ?? collect();
-                @endphp
-
-                @forelse($vehiculos as $vehiculo)
-
-                    <div class="border rounded-4 p-3 mb-3">
-
-                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
-
-                            <div>
-
-                                <div class="fw-bold fs-5">
-                                    {{ $vehiculo->marca ?? 'Sin marca' }}
-                                    {{ $vehiculo->submarca ?? '' }}
-                                </div>
-
-                                <div class="text-muted small mt-1">
-                                    {{ $vehiculo->folio_vehiculo ?? 'Sin folio' }}
-                                </div>
-
-                                <div class="small mt-2">
-
-                                    <span class="me-3">
-                                        <i class="bi bi-calendar3 me-1"></i>
-                                        {{ $vehiculo->anio ?? $vehiculo->año ?? 'Sin año' }}
-                                    </span>
-
-                                    <span>
-                                        <i class="bi bi-palette me-1"></i>
-                                        {{ $vehiculo->color ?? 'Sin color' }}
-                                    </span>
-
-                                </div>
-
-                            </div>
-
-
-                            @if(isset($vehiculo->id))
-                                <a
-                                    href="{{ url('/vehiculos/' . $vehiculo->id) }}"
-                                    class="btn btn-sm btn-outline-primary"
-                                >
-                                    <i class="bi bi-eye me-1"></i>
-                                    Ver
-                                </a>
-                            @endif
-
-                        </div>
-
-                    </div>
-
-                @empty
-
-                    <div class="text-center py-4">
-
-                        <div class="fs-1 text-muted mb-3">
-                            <i class="bi bi-car-front"></i>
-                        </div>
-
-                        <h6 class="fw-bold">
-                            Sin vehículos vinculados
-                        </h6>
-
-                        <p class="text-muted mb-0">
-                            Este afiliado todavía no tiene unidades registradas.
-                        </p>
-
-                    </div>
-
-                @endforelse
-
-            </div>
+            <a
+                href="{{ url('/afiliaciones/' . $registro->id . '/editar') }}"
+                class="btn btn-sm btn-outline-success"
+            >
+                <i class="bi bi-pencil-square me-1"></i>
+                Editar
+            </a>
 
         </div>
 
     </div>
 
 
-    <div class="col-12 col-xl-4">
+    {{-- RESUMEN COMPACTO --}}
+    <div class="row g-2 mb-3">
 
-        <div class="card card-sica mb-4">
+        <div class="col-6 col-md-3">
 
-            <div class="card-header bg-white border-0 pt-4 px-4">
+            <div class="card card-sica h-100">
+                <div class="card-body py-3">
 
-                <h5 class="fw-bold mb-1">
-                    Control de afiliación
-                </h5>
-
-                <p class="text-muted small mb-0">
-                    Estado actual del expediente.
-                </p>
-
-            </div>
-
-
-            <div class="card-body p-4">
-
-                <div class="py-3 border-bottom">
-
-                    <div class="text-muted small">
-                        Folio
-                    </div>
-
-                    <div class="fw-bold text-success">
-                        {{ $registro->folio_afiliado ?? 'No asignado' }}
-                    </div>
-
-                </div>
-
-
-                <div class="py-3 border-bottom">
-
-                    <div class="text-muted small">
+                    <div class="small text-muted">
                         Estatus
                     </div>
 
-                    <div class="mt-1">
-                        <span class="badge text-bg-{{ $badge }}">
-                            {{ ucfirst($estatus) }}
-                        </span>
+                    <div class="fw-bold mt-1">
+
+                        @if(in_array(strtolower($registro->estatus ?? ''), ['vigente', 'activo', 'activa']))
+
+                            <span class="text-success">
+                                <i class="bi bi-check-circle-fill me-1"></i>
+                                {{ $estatus }}
+                            </span>
+
+                        @elseif(in_array(strtolower($registro->estatus ?? ''), ['suspendido', 'suspendida']))
+
+                            <span class="text-warning">
+                                <i class="bi bi-pause-circle-fill me-1"></i>
+                                {{ $estatus }}
+                            </span>
+
+                        @else
+
+                            <span class="text-secondary">
+                                {{ $estatus }}
+                            </span>
+
+                        @endif
+
                     </div>
 
                 </div>
+            </div>
+
+        </div>
 
 
-                <div class="py-3 border-bottom">
+        <div class="col-6 col-md-3">
 
-                    <div class="text-muted small">
+            <div class="card card-sica h-100">
+                <div class="card-body py-3">
+
+                    <div class="small text-muted">
                         Vigencia
                     </div>
 
-                    <div class="fw-bold">
+                    <div class="fw-bold mt-1">
 
                         @if(!empty($registro->vigencia))
 
@@ -413,33 +130,202 @@
 
                         @else
 
-                            No registrada
+                            Sin definir
 
                         @endif
 
                     </div>
 
                 </div>
+            </div>
+
+        </div>
 
 
-                <div class="py-3">
+        <div class="col-6 col-md-3">
 
-                    <div class="text-muted small">
-                        Registro
+            <div class="card card-sica h-100">
+                <div class="card-body py-3">
+
+                    <div class="small text-muted">
+                        Vehículos
                     </div>
 
-                    <div class="fw-bold">
+                    <div class="fw-bold fs-5">
+                        {{ $vehiculos->count() }}
+                    </div>
 
-                        @if(!empty($registro->created_at))
+                </div>
+            </div>
 
-                            {{ \Carbon\Carbon::parse($registro->created_at)->format('d/m/Y H:i') }}
+        </div>
+
+
+        <div class="col-6 col-md-3">
+
+            <div class="card card-sica h-100">
+                <div class="card-body py-3">
+
+                    <div class="small text-muted">
+                        Credencial
+                    </div>
+
+                    <div class="fw-bold mt-1">
+
+                        @if($credencialActiva)
+
+                            <span class="text-success">
+                                <i class="bi bi-person-vcard me-1"></i>
+                                Registrada
+                            </span>
 
                         @else
 
-                            Sin información
+                            <span class="text-muted">
+                                Sin generar
+                            </span>
 
                         @endif
 
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    {{-- DATOS PERSONALES --}}
+    <div class="card card-sica mb-3">
+
+        <div class="card-header bg-white py-3">
+
+            <div class="fw-bold">
+                <i class="bi bi-person-lines-fill text-success me-2"></i>
+                Datos del afiliado
+            </div>
+
+        </div>
+
+
+        <div class="card-body">
+
+            <div class="row g-3">
+
+                <div class="col-md-6">
+
+                    <div class="small text-muted">
+                        Nombre completo
+                    </div>
+
+                    <div class="fw-semibold">
+                        {{ $registro->nombre ?? 'No registrado' }}
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-3">
+
+                    <div class="small text-muted">
+                        Teléfono
+                    </div>
+
+                    <div class="fw-semibold">
+                        {{ $registro->telefono ?? 'No registrado' }}
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-3">
+
+                    <div class="small text-muted">
+                        INE
+                    </div>
+
+                    <div class="fw-semibold">
+                        {{ $registro->ine ?? 'No registrada' }}
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-4">
+
+                    <div class="small text-muted">
+                        CURP
+                    </div>
+
+                    <div class="fw-semibold">
+                        {{ $registro->curp ?? 'No registrada' }}
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-4">
+
+                    <div class="small text-muted">
+                        RFC
+                    </div>
+
+                    <div class="fw-semibold">
+                        {{ $registro->rfc ?? 'No registrado' }}
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-4">
+
+                    <div class="small text-muted">
+                        Correo
+                    </div>
+
+                    <div class="fw-semibold">
+                        {{ $registro->correo ?? 'No registrado' }}
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-6">
+
+                    <div class="small text-muted">
+                        Domicilio
+                    </div>
+
+                    <div class="fw-semibold">
+                        {{ $registro->domicilio ?? 'No registrado' }}
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-3">
+
+                    <div class="small text-muted">
+                        Municipio
+                    </div>
+
+                    <div class="fw-semibold">
+                        {{ $registro->municipio ?? 'No registrado' }}
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-3">
+
+                    <div class="small text-muted">
+                        Estado
+                    </div>
+
+                    <div class="fw-semibold">
+                        {{ $registro->estado ?? 'No registrado' }}
                     </div>
 
                 </div>
@@ -448,47 +334,147 @@
 
         </div>
 
+    </div>
 
-        <div class="card card-sica">
 
-            <div class="card-header bg-white border-0 pt-4 px-4">
+    {{-- VEHÍCULOS DEL EXPEDIENTE --}}
+    <div class="card card-sica mb-3">
 
-                <h5 class="fw-bold mb-1">
-                    Acciones
-                </h5>
+        <div class="card-header bg-white py-3">
 
-                <p class="text-muted small mb-0">
-                    Operaciones disponibles.
-                </p>
+            <div class="d-flex justify-content-between align-items-center gap-2">
+
+                <div class="fw-bold">
+                    <i class="bi bi-car-front-fill text-success me-2"></i>
+                    Vehículos
+                </div>
+
+                <a
+                    href="{{ url('/vehiculos/nuevo?afiliado_id=' . $registro->id) }}"
+                    class="btn btn-sm btn-sica"
+                >
+                    <i class="bi bi-plus-lg me-1"></i>
+                    Agregar vehículo
+                </a>
 
             </div>
 
+        </div>
 
-            <div class="card-body p-4 d-grid gap-2">
 
-                @if(isset($registro->id))
+        <div class="card-body p-0">
 
-                    <a
-                        href="{{ url('/afiliaciones/' . $registro->id . '/editar') }}"
-                        class="btn btn-outline-primary"
-                    >
-                        <i class="bi bi-pencil me-2"></i>
-                        Editar expediente
-                    </a>
+            @forelse($vehiculos as $vehiculo)
 
-                    <a
-                        href="{{ url('/vehiculos/nuevo?afiliado_id=' . $registro->id) }}"
-                        class="btn btn-outline-success"
-                    >
-                        <i class="bi bi-car-front me-2"></i>
-                        Registrar vehículo
-                    </a>
+                <div class="p-3 border-bottom">
+
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+
+                        <div>
+
+                            <div class="fw-bold">
+                                {{ $vehiculo->marca ?? '' }}
+                                {{ $vehiculo->submarca ?? '' }}
+                            </div>
+
+                            <div class="small text-muted mt-1">
+
+                                @if(!empty($vehiculo->modelo))
+                                    Modelo {{ $vehiculo->modelo }}
+                                @endif
+
+                                @if(!empty($vehiculo->anio))
+                                    · Año {{ $vehiculo->anio }}
+                                @endif
+
+                                @if(!empty($vehiculo->color))
+                                    · {{ $vehiculo->color }}
+                                @endif
+
+                            </div>
+
+                            <div class="small mt-1">
+
+                                <span class="text-muted">
+                                    VIN:
+                                </span>
+
+                                {{ $vehiculo->vin ?? 'Sin registrar' }}
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="text-end">
+
+                            <div class="mb-2">
+
+                                @if(in_array(strtolower($vehiculo->estatus ?? ''), ['vigente', 'activo', 'activa']))
+
+                                    <span class="badge text-bg-success">
+                                        {{ strtoupper($vehiculo->estatus) }}
+                                    </span>
+
+                                @else
+
+                                    <span class="badge text-bg-secondary">
+                                        {{ strtoupper($vehiculo->estatus ?? 'SIN ESTATUS') }}
+                                    </span>
+
+                                @endif
+
+                            </div>
+
+                            <a
+                                href="{{ url('/vehiculos/' . $vehiculo->id) }}"
+                                class="btn btn-sm btn-outline-success"
+                            >
+                                Ver vehículo
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            @empty
+
+                <div class="p-4 text-center text-muted">
+
+                    <i class="bi bi-car-front fs-3 d-block mb-2"></i>
+
+                    Este afiliado todavía no tiene vehículos registrados.
+
+                </div>
+
+            @endforelse
+
+        </div>
+
+    </div>
+
+
+    {{-- CREDENCIAL DEL EXPEDIENTE --}}
+    <div class="card card-sica">
+
+        <div class="card-header bg-white py-3">
+
+            <div class="d-flex justify-content-between align-items-center gap-2">
+
+                <div class="fw-bold">
+                    <i class="bi bi-person-vcard-fill text-success me-2"></i>
+                    Credencial
+                </div>
+
+                @if(!$credencialActiva)
 
                     <a
                         href="{{ url('/credenciales/crear?afiliado_id=' . $registro->id) }}"
-                        class="btn btn-outline-warning"
+                        class="btn btn-sm btn-sica"
                     >
-                        <i class="bi bi-person-vcard me-2"></i>
+                        <i class="bi bi-plus-lg me-1"></i>
                         Generar credencial
                     </a>
 
@@ -498,35 +484,79 @@
 
         </div>
 
-    </div>
 
-</div>
+        <div class="card-body">
 
-@else
+            @if($credencialActiva)
 
-<div class="card card-sica">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
 
-    <div class="card-body text-center py-5">
+                    <div>
 
-        <div class="fs-1 text-danger mb-3">
-            <i class="bi bi-exclamation-triangle"></i>
+                        <div class="small text-muted">
+                            Credencial vigente del expediente
+                        </div>
+
+                        <div class="fw-bold mt-1">
+                            {{ $credencialActiva->folio_credencial ?? 'Credencial SICA' }}
+                        </div>
+
+                        <div class="small text-muted mt-1">
+
+                            Vigencia:
+
+                            @if(!empty($credencialActiva->vigencia))
+
+                                {{ \Carbon\Carbon::parse($credencialActiva->vigencia)->format('d/m/Y') }}
+
+                            @else
+
+                                Sin definir
+
+                            @endif
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="d-flex gap-2">
+
+                        <a
+                            href="{{ url('/credenciales/' . $credencialActiva->id) }}"
+                            class="btn btn-sm btn-outline-success"
+                        >
+                            <i class="bi bi-eye me-1"></i>
+                            Ver
+                        </a>
+
+                        <a
+                            href="{{ url('/credenciales/' . $credencialActiva->id . '/imprimir') }}"
+                            class="btn btn-sm btn-outline-secondary"
+                        >
+                            <i class="bi bi-printer me-1"></i>
+                            Imprimir
+                        </a>
+
+                    </div>
+
+                </div>
+
+            @else
+
+                <div class="text-center text-muted py-3">
+
+                    <i class="bi bi-person-vcard fs-3 d-block mb-2"></i>
+
+                    Este afiliado todavía no tiene credencial.
+
+                </div>
+
+            @endif
+
         </div>
 
-        <h4 class="fw-bold">
-            No se encontró el afiliado
-        </h4>
-
-        <p class="text-muted">
-            El expediente solicitado no está disponible.
-        </p>
-
-        <a href="{{ url('/afiliaciones') }}" class="btn btn-sica">
-            Regresar a afiliados
-        </a>
-
     </div>
-
-</div>
 
 @endif
 
