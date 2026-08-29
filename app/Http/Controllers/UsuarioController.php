@@ -4,86 +4,181 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class UsuarioController extends Controller
 {
-
+    /**
+     * Mostrar listado de usuarios.
+     */
     public function index()
     {
-        $usuarios = User::orderBy('name')->get();
+        $usuarios = User::orderByDesc('id')->get();
 
-        return view('usuarios.index', compact('usuarios'));
+        return view(
+            'usuarios.index',
+            compact('usuarios')
+        );
     }
 
+
+    /**
+     * Mostrar formulario de creación.
+     */
     public function create()
     {
-        return view('usuarios.nuevo');
+        return view('usuarios.crear');
     }
 
+
+    /**
+     * Guardar nuevo usuario.
+     */
     public function store(Request $request)
     {
+        $datos = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:150',
+            ],
 
-        $request->validate([
+            'email' => [
+                'required',
+                'email',
+                'max:150',
+                'unique:users,email',
+            ],
 
-            'name'=>'required',
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'confirmed',
+            ],
 
-            'email'=>'required|email|unique:users',
-
-            'password'=>'required|min:8',
-
-            'rol'=>'required',
-
+            'rol' => [
+                'required',
+                Rule::in([
+                    'ADMIN_PRINCIPAL',
+                    'COORDINADOR',
+                ]),
+            ],
         ]);
 
-        User::create([
 
-            'name'=>$request->name,
+        $usuario = new User();
 
-            'email'=>$request->email,
+        $usuario->name =
+            $datos['name'];
 
-            'password'=>$request->password,
+        $usuario->email =
+            strtolower($datos['email']);
 
-            'rol'=>$request->rol,
+        $usuario->password =
+            Hash::make($datos['password']);
 
-            'activo'=>1,
+        $usuario->rol =
+            $datos['rol'];
 
-            'telefono'=>$request->telefono,
+        $usuario->save();
 
-            'municipio'=>$request->municipio,
 
-        ]);
-
-        return redirect()->route('usuarios.index')
-            ->with('success','Usuario creado correctamente');
-
+        return redirect('/usuarios')
+            ->with(
+                'success',
+                'Usuario creado correctamente.'
+            );
     }
 
-    public function edit(User $user)
+
+    /**
+     * Mostrar formulario de edición.
+     */
+    public function edit($id)
     {
-        return view('usuarios.editar',compact('user'));
+        $usuario = User::findOrFail($id);
+
+        return view(
+            'usuarios.editar',
+            compact('usuario')
+        );
     }
 
-    public function update(Request $request, User $user)
+
+    /**
+     * Actualizar usuario.
+     */
+    public function update(Request $request, $id)
     {
+        $usuario = User::findOrFail($id);
 
-        $user->update([
 
-            'name'=>$request->name,
+        $datos = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:150',
+            ],
 
-            'email'=>$request->email,
+            'email' => [
+                'required',
+                'email',
+                'max:150',
 
-            'rol'=>$request->rol,
+                Rule::unique('users', 'email')
+                    ->ignore($usuario->id),
+            ],
 
-            'activo'=>$request->activo,
+            'rol' => [
+                'required',
+                Rule::in([
+                    'ADMIN_PRINCIPAL',
+                    'COORDINADOR',
+                ]),
+            ],
 
-            'telefono'=>$request->telefono,
-
-            'municipio'=>$request->municipio,
-
+            'password' => [
+                'nullable',
+                'string',
+                'min:8',
+                'confirmed',
+            ],
         ]);
 
-        return redirect()->route('usuarios.index');
 
+        $usuario->name =
+            $datos['name'];
+
+        $usuario->email =
+            strtolower($datos['email']);
+
+        $usuario->rol =
+            $datos['rol'];
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | CAMBIAR CONTRASEÑA SOLO SI SE ESCRIBIÓ UNA NUEVA
+        |--------------------------------------------------------------------------
+        */
+
+        if (!empty($datos['password'])) {
+
+            $usuario->password =
+                Hash::make($datos['password']);
+
+        }
+
+
+        $usuario->save();
+
+
+        return redirect('/usuarios')
+            ->with(
+                'success',
+                'Usuario actualizado correctamente.'
+            );
     }
-
 }
