@@ -28,7 +28,7 @@
             --sica-texto: #212529;
             --sica-gris: #6c757d;
             --sica-borde: #dee2e6;
-            --sidebar-width: 270px;
+            --sidebar-width: 250px;
         }
 
         * {
@@ -52,89 +52,91 @@
                 linear-gradient(
                     180deg,
                     var(--sica-verde-profundo) 0%,
-                    var(--sica-verde) 55%,
+                    var(--sica-verde) 58%,
                     var(--sica-verde-oscuro) 100%
                 );
             color: white;
             overflow-y: auto;
             z-index: 1000;
-            box-shadow: 3px 0 15px rgba(0, 0, 0, 0.12);
+            box-shadow: 3px 0 14px rgba(0,0,0,.11);
         }
 
         .sidebar-header {
-            padding: 24px 20px 18px;
+            padding: 18px 16px 14px;
             text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,.15);
+            border-bottom: 1px solid rgba(255,255,255,.14);
         }
 
         .sidebar-logo {
-            width: 70px;
-            height: 70px;
-            margin: 0 auto 10px;
-            border-radius: 18px;
+            width: 52px;
+            height: 52px;
+            margin: 0 auto 8px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: rgba(255,255,255,.14);
-            border: 1px solid rgba(255,255,255,.25);
-            font-size: 34px;
+            border: 1px solid rgba(255,255,255,.22);
+            font-size: 26px;
         }
 
         .sidebar-header h3 {
             margin: 0;
+            font-size: 22px;
             font-weight: 800;
             letter-spacing: 1px;
         }
 
         .sidebar-header small {
             display: block;
-            margin-top: 4px;
-            color: rgba(255,255,255,.78);
+            margin-top: 3px;
+            font-size: 10px;
+            color: rgba(255,255,255,.75);
         }
 
         .sidebar-menu {
-            padding: 18px 14px 30px;
+            padding: 12px 10px 24px;
         }
 
         .menu-label {
-            margin: 18px 10px 8px;
-            font-size: 11px;
-            font-weight: bold;
-            letter-spacing: 1.3px;
+            margin: 14px 9px 6px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
             text-transform: uppercase;
-            color: rgba(255,255,255,.58);
+            color: rgba(255,255,255,.55);
         }
 
         .sidebar-link {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             width: 100%;
-            padding: 12px 14px;
-            margin-bottom: 6px;
+            padding: 9px 11px;
+            margin-bottom: 4px;
             color: white;
             text-decoration: none;
-            border-radius: 10px;
-            transition: .2s ease;
+            border-radius: 9px;
+            transition: .18s ease;
+            font-size: 14px;
         }
 
         .sidebar-link i {
-            width: 22px;
+            width: 20px;
             text-align: center;
-            font-size: 18px;
+            font-size: 16px;
         }
 
         .sidebar-link:hover {
             color: white;
-            background: rgba(255,255,255,.14);
-            transform: translateX(2px);
+            background: rgba(255,255,255,.13);
         }
 
         .sidebar-link.active {
             background: white;
             color: var(--sica-verde-profundo);
             font-weight: 700;
-            box-shadow: 0 5px 14px rgba(0,0,0,.13);
+            box-shadow: 0 4px 12px rgba(0,0,0,.12);
         }
 
         .main-wrapper {
@@ -146,14 +148,14 @@
             position: sticky;
             top: 0;
             z-index: 900;
-            min-height: 68px;
+            min-height: 58px;
             background: white;
             border-bottom: 1px solid var(--sica-borde);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 24px;
-            box-shadow: 0 2px 10px rgba(0,0,0,.04);
+            padding: 8px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.035);
         }
 
         .topbar-title {
@@ -162,55 +164,56 @@
         }
 
         .topbar-title strong {
-            font-size: 18px;
+            font-size: 16px;
         }
 
         .topbar-title span {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--sica-gris);
         }
 
         .topbar-user {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 9px;
         }
 
         .user-avatar {
-            width: 40px;
-            height: 40px;
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
             background: #e9f5ee;
             color: var(--sica-verde-profundo);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 17px;
         }
 
         .content {
-            padding: 24px;
+            padding: 18px;
         }
 
         .page-header {
-            margin-bottom: 20px;
+            margin-bottom: 14px;
         }
 
         .page-header h1 {
             margin: 0;
-            font-size: 26px;
+            font-size: 22px;
             font-weight: 800;
         }
 
         .page-header p {
-            margin: 5px 0 0;
+            margin: 4px 0 0;
             color: var(--sica-gris);
+            font-size: 13px;
         }
 
         .card-sica {
             border: 0;
-            border-radius: 16px;
-            box-shadow: 0 4px 16px rgba(0,0,0,.06);
+            border-radius: 14px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.055);
         }
 
         .btn-sica {
@@ -263,11 +266,11 @@
             }
 
             .content {
-                padding: 16px;
+                padding: 12px;
             }
 
             .topbar {
-                padding: 10px 15px;
+                padding: 8px 12px;
             }
 
             .user-info-text {
@@ -317,14 +320,14 @@
 
 
         <div class="menu-label">
-            Afiliaciones
+            Expedientes
         </div>
 
         <a
             href="{{ url('/afiliaciones') }}"
-            class="sidebar-link {{ request()->is('afiliaciones') ? 'active' : '' }}"
+            class="sidebar-link {{ request()->is('afiliaciones*') ? 'active' : '' }}"
         >
-            <i class="bi bi-people"></i>
+            <i class="bi bi-folder2-open"></i>
             <span>Afiliados</span>
         </a>
 
@@ -334,40 +337,6 @@
         >
             <i class="bi bi-person-plus"></i>
             <span>Nueva afiliación</span>
-        </a>
-
-
-        <div class="menu-label">
-            Vehículos
-        </div>
-
-        <a
-            href="{{ url('/vehiculos') }}"
-            class="sidebar-link {{ request()->is('vehiculos') ? 'active' : '' }}"
-        >
-            <i class="bi bi-car-front"></i>
-            <span>Vehículos</span>
-        </a>
-
-        <a
-            href="{{ url('/vehiculos/nuevo') }}"
-            class="sidebar-link {{ request()->is('vehiculos/nuevo') ? 'active' : '' }}"
-        >
-            <i class="bi bi-plus-circle"></i>
-            <span>Registrar vehículo</span>
-        </a>
-
-
-        <div class="menu-label">
-            Identificación
-        </div>
-
-        <a
-            href="{{ url('/credenciales') }}"
-            class="sidebar-link {{ request()->is('credenciales*') ? 'active' : '' }}"
-        >
-            <i class="bi bi-person-vcard"></i>
-            <span>Credenciales</span>
         </a>
 
 
@@ -546,7 +515,6 @@
 ></script>
 
 <script>
-
     function abrirSidebar()
     {
         document
@@ -560,7 +528,6 @@
             .add('show');
     }
 
-
     function cerrarSidebar()
     {
         document
@@ -573,7 +540,6 @@
             .classList
             .remove('show');
     }
-
 </script>
 
 @stack('scripts')
