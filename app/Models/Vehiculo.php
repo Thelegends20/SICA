@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Vehiculo extends Model
 {
     use HasFactory;
+
+    protected $table = 'vehiculos';
 
     protected $fillable = [
         'afiliado_id',
@@ -24,16 +26,32 @@ class Vehiculo extends Model
         'serie_motor',
         'estatus',
         'vigencia',
-     ];
+    ];
 
     protected $casts = [
+        'anio' => 'integer',
         'vigencia' => 'date',
-     ];
+    ];
 
-
+    /**
+     * Afiliado propietario del vehículo.
+     */
     public function afiliado()
     {
-        return $this->belongsTo(Afiliacion::class, 'afiliado_id');
+        return $this->belongsTo(
+            Afiliacion::class,
+            'afiliado_id'
+        );
     }
-    
-};
+
+    /**
+     * Alias para compatibilidad con vistas anteriores.
+     */
+    public function afiliacion()
+    {
+        return $this->belongsTo(
+            Afiliacion::class,
+            'afiliado_id'
+        );
+    }
+}
