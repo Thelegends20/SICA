@@ -2,86 +2,162 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Credencial;
 use App\Models\Afiliacion;
+use App\Models\Credencial;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class CredencialController extends Controller
 {
-
     /**
-     * Listado de credenciales
+     * Mostrar listado de credenciales.
      */
     public function index()
     {
         $credenciales = Credencial::with('afiliado')
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('id')
             ->get();
 
-        return view('credenciales.index', compact('credenciales'));
+        return view(
+            'credenciales.index',
+            compact('credenciales')
+        );
     }
 
 
     /**
-     * Generar credencial para afiliado
+     * Mostrar formulario para generar credencial.
      */
-    public function create($afiliado)
+    public function create()
     {
-        $afiliado = Afiliacion::findOrFail($afiliado);
+        $afiliados = Afiliacion::orderBy('nombre')->get();
 
-        return view('credenciales.crear', compact('afiliado'));
+        return view(
+            'credenciales.crear',
+            compact('afiliados')
+        );
     }
 
 
     /**
-     * Guardar credencial
+     * Guardar nueva credencial.
      */
     public function store(Request $request)
     {
+        $datos = $request->validate([
+            'afiliado_id' => [
+                'required',
+                'exists:afiliaciones,id',
+            ],
 
-        $request->validate([
-            'afiliado_id' => 'required|exists:afiliacions,id',
+            'estatus' => [
+                'required',
+                Rule::in([
+                    'activa',
+                    'cancelada',
+                ]),
+            ],
+
+            'vigencia' => [
+                'nullable',
+                'date',
+            ],
         ]);
 
 
-        $folio = 'UCD-C-' . date('Y') . '-' .
-            str_pad(Credencial::count() + 1, 6, '0', STR_PAD_LEFT);
+        /*
+        |--------------------------------------------------------------------------
+        | GENERAR FOLIO DE CREDENCIAL
+        |--------------------------------------------------------------------------
+        */
+
+        $ultimoId = (int) Credencial::max('id');
+
+        $siguiente = $ultimoId + 1;
+
+        $folio = 'SICA-C-'
+            . now()->format('Y')
+            . '-'
+            . str_pad(
+                $siguiente,
+                6,
+                '0',
+                STR_PAD_LEFT
+            );
 
 
-        $token = strtoupper(Str::random(10));
+        /*
+        |--------------------------------------------------------------------------
+        | TOKEN DE VERIFICACIÓN
+        |--------------------------------------------------------------------------
+        */
+
+        $token = Str::random(64);
 
 
-        $credencial = Credencial::create([
+        /*
+        |--------------------------------------------------------------------------
+        | CREAR CREDENCIAL
+        |--------------------------------------------------------------------------
+        */
 
-            'afiliado_id'      => $request->afiliado_id,
-            'folio_credencial' => $folio,
-            'token_qr'         => $token,
-            'estatus'          => 'VIGENTE',
-            'vigencia'         => now()->addYear(),
+        $credencial = new Credencial();
 
-        ]);
+        $credencial->afiliado_id =
+            $datos['afiliado_id'];
+
+        $credencial->folio_credencial =
+            $folio;
+
+        $credencial->token_qr =
+            $token;
+
+        $credencial->estatus =
+            $datos['estatus'];
+
+        $credencial->vigencia =
+            $datos['vigencia']
+            ?? now()->addYear()->format('Y-m-d');
+
+        $credencial->save();
 
 
-        return redirect()
-            ->route('credenciales.show', $credencial->id)
-            ->with('success', 'Credencial generada correctamente.');
-
+        return redirect(
+            '/credenciales/' . $credencial->id
+        )->with(
+            'success',
+            'Credencial generada correctamente. Folio: ' . $folio
+        );
     }
 
 
     /**
-     * Mostrar credencial
+     * Mostrar credencial.
      */
     public function show($id)
     {
-
-        $credencial = Credencial::with('afiliado.vehiculos')
+        $credencial = Credencial::with('afiliado')
             ->findOrFail($id);
 
-
-        return view('credenciales.ver', compact('credencial'));
-
+        return view(
+            'credenciales.ver',
+            compact('credencial')
+        );
     }
 
+
+    /**
+     * Vista para impresión.
+     */
+    public function imprimir($id)
+    {
+        $credencial = Credencial::with('afiliado')
+            ->findOrFail($id);
+
+        return view(
+            'credenciales.imprimir',
+            compact('credencial')
+        );
+    }
 }
