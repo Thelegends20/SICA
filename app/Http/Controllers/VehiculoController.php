@@ -2,151 +2,384 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Vehiculo;
 use App\Models\Afiliacion;
+use App\Models\Vehiculo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class VehiculoController extends Controller
 {
     /**
-     * Dashboard de vehículos
+     * Mostrar listado de vehículos.
      */
     public function index()
     {
         $vehiculos = Vehiculo::with('afiliado')
-            ->orderBy('id', 'desc')
-            ->paginate(15);
+            ->orderByDesc('id')
+            ->get();
 
         return view('vehiculos.index', compact('vehiculos'));
     }
 
-    /**
-     * Formulario para registrar un vehículo
-     */
-    public function create($afiliado)
-    {
-        $afiliado = Afiliacion::findOrFail($afiliado);
 
-        return view('vehiculos.nuevo', compact('afiliado'));
+    /**
+     * Mostrar formulario de registro.
+     */
+    public function create()
+    {
+        $afiliados = Afiliacion::orderBy('nombre')->get();
+
+        return view('vehiculos.nuevo', compact('afiliados'));
     }
 
+
     /**
-     * Guardar vehículo
+     * Guardar vehículo.
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'afiliado_id' => 'required|exists:afiliacions,id',
-            'marca'       => 'required|string|max:100',
-            'submarca'    => 'nullable|string|max:100',
-            'modelo'      => 'required|string|max:100',
-            'anio'        => 'required|digits:4',
-            'color'       => 'required|string|max:50',
-            'vin'         => 'required|string|max:50|unique:vehiculos,vin',
-            'motor'       => 'nullable|string|max:100',
-            'placas'      => 'nullable|string|max:20',
-            'serie_motor' => 'nullable|string|max:100',
+        $datos = $request->validate([
+            'afiliado_id' => [
+                'required',
+                'exists:afiliaciones,id',
+            ],
+
+            'marca' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'submarca' => [
+                'nullable',
+                'string',
+                'max:100',
+            ],
+
+            'anio' => [
+                'nullable',
+                'integer',
+                'min:1900',
+                'max:' . (now()->year + 1),
+            ],
+
+            'color' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+
+            'placas' => [
+                'nullable',
+                'string',
+                'max:30',
+            ],
+
+            'vin' => [
+                'required',
+                'string',
+                'max:17',
+            ],
+
+            'motor' => [
+                'nullable',
+                'string',
+                'max:100',
+            ],
+
+            'serie_motor' => [
+                'nullable',
+                'string',
+                'max:100',
+            ],
+
+            'estatus' => [
+                'required',
+                Rule::in([
+                    'activo',
+                    'inactivo',
+                    'suspendido',
+                    'robado',
+                    'baja',
+                ]),
+            ],
+
+            'vigencia' => [
+                'nullable',
+                'date',
+            ],
         ]);
 
-        $folio = 'UCD-V-' . date('Y') . '-' .
-            str_pad(Vehiculo::count() + 1, 6, '0', STR_PAD_LEFT);
 
-        $token = strtoupper(Str::random(8));
+        /*
+        |--------------------------------------------------------------------------
+        | GENERAR FOLIO
+        |--------------------------------------------------------------------------
+        */
 
-        $vehiculo = Vehiculo::create([
+        $ultimoId = (int) Vehiculo::max('id');
 
-            'afiliado_id'    => $request->afiliado_id,
-            'folio_vehiculo' => $folio,
-            'token_qr'       => $token,
+        $siguiente = $ultimoId + 1;
 
-            'marca'          => strtoupper($request->marca),
-            'submarca'       => strtoupper($request->submarca),
-            'modelo'         => strtoupper($request->modelo),
-            'anio'           => $request->anio,
-            'color'          => strtoupper($request->color),
+        $folio = 'SICA-V-'
+            . now()->format('Y')
+            . '-'
+            . str_pad(
+                $siguiente,
+                6,
+                '0',
+                STR_PAD_LEFT
+            );
 
-            'vin'            => strtoupper($request->vin),
-            'motor'          => strtoupper($request->motor),
-            'placas'         => strtoupper($request->placas),
-            'serie_motor'    => strtoupper($request->serie_motor),
 
-            'estatus'        => 'VIGENTE',
-            'vigencia'       => now()->addYear(),
-        ]);
+        /*
+        |--------------------------------------------------------------------------
+        | TOKEN QR
+        |--------------------------------------------------------------------------
+        */
 
-        return redirect()->route('vehiculos.show', $vehiculo->id)
-            ->with('success', 'Vehículo registrado correctamente.');
+        $tokenQr = Str::random(64);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | CREAR VEHÍCULO
+        |--------------------------------------------------------------------------
+        */
+
+        $vehiculo = new Vehiculo();
+
+        $vehiculo->afiliado_id =
+            $datos['afiliado_id'];
+
+        $vehiculo->folio_vehiculo =
+            $folio;
+
+        $vehiculo->token_qr =
+            $tokenQr;
+
+        $vehiculo->marca =
+            $datos['marca'];
+
+        $vehiculo->submarca =
+            $datos['submarca'] ?? null;
+
+        $vehiculo->anio =
+            $datos['anio'] ?? null;
+
+        $vehiculo->color =
+            $datos['color'] ?? null;
+
+        $vehiculo->placas =
+            $datos['placas'] ?? null;
+
+        $vehiculo->vin =
+            strtoupper($datos['vin']);
+
+        $vehiculo->motor =
+            $datos['motor'] ?? null;
+
+        $vehiculo->serie_motor =
+            $datos['serie_motor'] ?? null;
+
+        $vehiculo->estatus =
+            $datos['estatus'];
+
+        $vehiculo->vigencia =
+            $datos['vigencia']
+            ?? now()->addYear()->format('Y-m-d');
+
+        $vehiculo->save();
+
+
+        return redirect(
+            '/vehiculos/' . $vehiculo->id
+        )->with(
+            'success',
+            'Vehículo registrado correctamente. Folio: ' . $folio
+        );
     }
 
+
     /**
-     * Expediente del vehículo
+     * Mostrar expediente del vehículo.
      */
     public function show($id)
     {
-        $vehiculo = Vehiculo::with('afiliado')->findOrFail($id);
+        $vehiculo = Vehiculo::with('afiliado')
+            ->findOrFail($id);
 
-        return view('vehiculos.ver', compact('vehiculo'));
+        return view(
+            'vehiculos.ver',
+            compact('vehiculo')
+        );
     }
 
+
     /**
-     * Formulario para editar
+     * Mostrar formulario de edición.
      */
     public function edit($id)
     {
         $vehiculo = Vehiculo::findOrFail($id);
 
-        return view('vehiculos.editar', compact('vehiculo'));
+        $afiliados = Afiliacion::orderBy('nombre')->get();
+
+        return view(
+            'vehiculos.editar',
+            compact(
+                'vehiculo',
+                'afiliados'
+            )
+        );
     }
 
+
     /**
-     * Actualizar vehículo
+     * Actualizar vehículo.
      */
     public function update(Request $request, $id)
     {
         $vehiculo = Vehiculo::findOrFail($id);
 
-        $request->validate([
-            'marca'       => 'required|string|max:100',
-            'submarca'    => 'nullable|string|max:100',
-            'modelo'      => 'required|string|max:100',
-            'anio'        => 'required|digits:4',
-            'color'       => 'required|string|max:50',
-            'vin'         => 'required|string|max:50|unique:vehiculos,vin,' . $vehiculo->id,
-            'motor'       => 'nullable|string|max:100',
-            'placas'      => 'nullable|string|max:20',
-            'serie_motor' => 'nullable|string|max:100',
+
+        $datos = $request->validate([
+            'afiliado_id' => [
+                'required',
+                'exists:afiliaciones,id',
+            ],
+
+            'marca' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'submarca' => [
+                'nullable',
+                'string',
+                'max:100',
+            ],
+
+            'anio' => [
+                'nullable',
+                'integer',
+                'min:1900',
+                'max:' . (now()->year + 1),
+            ],
+
+            'color' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+
+            'placas' => [
+                'nullable',
+                'string',
+                'max:30',
+            ],
+
+            'vin' => [
+                'required',
+                'string',
+                'max:17',
+            ],
+
+            'motor' => [
+                'nullable',
+                'string',
+                'max:100',
+            ],
+
+            'serie_motor' => [
+                'nullable',
+                'string',
+                'max:100',
+            ],
+
+            'estatus' => [
+                'required',
+                Rule::in([
+                    'activo',
+                    'inactivo',
+                    'suspendido',
+                    'robado',
+                    'baja',
+                ]),
+            ],
+
+            'vigencia' => [
+                'nullable',
+                'date',
+            ],
         ]);
 
-        $vehiculo->update([
-            'marca'       => strtoupper($request->marca),
-            'submarca'    => strtoupper($request->submarca),
-            'modelo'      => strtoupper($request->modelo),
-            'anio'        => $request->anio,
-            'color'       => strtoupper($request->color),
 
-            'vin'         => strtoupper($request->vin),
-            'motor'       => strtoupper($request->motor),
-            'placas'      => strtoupper($request->placas),
-            'serie_motor' => strtoupper($request->serie_motor),
-        ]);
+        /*
+        |--------------------------------------------------------------------------
+        | ACTUALIZAR
+        |--------------------------------------------------------------------------
+        */
 
-        return redirect()->route('vehiculos.show', $vehiculo->id)
-            ->with('success', 'Vehículo actualizado correctamente.');
+        $vehiculo->afiliado_id =
+            $datos['afiliado_id'];
+
+        $vehiculo->marca =
+            $datos['marca'];
+
+        $vehiculo->submarca =
+            $datos['submarca'] ?? null;
+
+        $vehiculo->anio =
+            $datos['anio'] ?? null;
+
+        $vehiculo->color =
+            $datos['color'] ?? null;
+
+        $vehiculo->placas =
+            $datos['placas'] ?? null;
+
+        $vehiculo->vin =
+            strtoupper($datos['vin']);
+
+        $vehiculo->motor =
+            $datos['motor'] ?? null;
+
+        $vehiculo->serie_motor =
+            $datos['serie_motor'] ?? null;
+
+        $vehiculo->estatus =
+            $datos['estatus'];
+
+        $vehiculo->vigencia =
+            $datos['vigencia']
+            ?? $vehiculo->vigencia;
+
+        $vehiculo->save();
+
+
+        return redirect(
+            '/vehiculos/' . $vehiculo->id
+        )->with(
+            'success',
+            'Vehículo actualizado correctamente.'
+        );
     }
+
 
     /**
-     * Eliminar vehículo
+     * Mostrar información QR del vehículo.
      */
-    public function destroy($id)
+    public function qr($id)
     {
-        $vehiculo = Vehiculo::findOrFail($id);
+        $vehiculo = Vehiculo::with('afiliado')
+            ->findOrFail($id);
 
-        $afiliado = $vehiculo->afiliado_id;
-
-        $vehiculo->delete();
-
-        return redirect()->route('afiliados.show', $afiliado)
-            ->with('success', 'Vehículo eliminado correctamente.');
+        return view(
+            'vehiculos.qr',
+            compact('vehiculo')
+        );
     }
-};
+}
