@@ -13,7 +13,7 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('afiliado_id')
-                  ->constrained('afiliacions')
+                  ->constrained('afiliaciones')
                   ->cascadeOnDelete();
 
             $table->string('folio_credencial')->unique();

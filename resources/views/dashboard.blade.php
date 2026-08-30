@@ -311,7 +311,7 @@
                 </h5>
 
 
-                <a href="{{ route('afiliaciones.nueva') }}"
+                 <a href="{{ route('afiliaciones.create') }}"
                    class="quick-btn">
 
                     <i class="bi bi-person-plus-fill"></i>
@@ -326,7 +326,7 @@
                 </a>
 
 
-                <a href="{{ route('vehiculos.nuevo') }}"
+                <a href="{{ route('vehiculos.create') }}"
                    class="quick-btn">
 
                     <i class="bi bi-car-front-fill"></i>
