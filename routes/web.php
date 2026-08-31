@@ -14,13 +14,18 @@ use App\Http\Controllers\AuditoriaController;
 
 /*
 |--------------------------------------------------------------------------
-| RUTA PÚBLICA
+| RUTAS PÚBLICAS
 |--------------------------------------------------------------------------
 */
 
 Route::get('/', function () {
     return redirect()->route('login');
 });
+
+Route::get(
+    '/verificar/vehiculo/{token}',
+    [VehiculoController::class, 'verificacionPublica']
+)->name('vehiculos.verificacion.publica');
 
 
 /*

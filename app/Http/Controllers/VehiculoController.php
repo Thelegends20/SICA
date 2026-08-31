@@ -382,4 +382,23 @@ class VehiculoController extends Controller
             compact('vehiculo')
         );
     }
+
+
+    /**
+     * Consulta pública mediante token QR.
+     *
+     * No utiliza el ID interno del vehículo.
+     * La unidad se localiza exclusivamente mediante token_qr.
+     */
+    public function verificacionPublica($token)
+    {
+        $vehiculo = Vehiculo::with('afiliado')
+            ->where('token_qr', $token)
+            ->firstOrFail();
+
+        return view(
+            'vehiculos.verificacion-publica',
+            compact('vehiculo')
+        );
+    }
 }

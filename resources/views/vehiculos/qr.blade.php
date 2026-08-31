@@ -13,6 +13,12 @@
         ?? $registro?->afiliacion
         ?? null;
 
+    $urlVerificacion = $registro
+        ? rtrim(config('app.url'), '/')
+            . '/verificar/vehiculo/'
+            . $registro->token_qr
+        : null;
+
 @endphp
 
 
@@ -28,7 +34,10 @@
 
     <div>
         <h1>Verificación QR</h1>
-        <p>Identificador interno del vehículo registrado en SICA.</p>
+
+        <p>
+            Código de verificación pública del vehículo registrado en SICA.
+        </p>
     </div>
 
     <a
@@ -45,6 +54,7 @@
 <div class="row g-4">
 
 
+    {{-- QR --}}
     <div class="col-12 col-lg-5">
 
         <div class="card card-sica h-100">
@@ -52,22 +62,17 @@
             <div class="card-body p-4 text-center">
 
                 <div
-                    class="mx-auto mb-4 rounded-4 bg-light d-flex align-items-center justify-content-center"
-                    style="width:220px;height:220px;"
+                    class="mx-auto mb-4 bg-white border rounded-4 d-flex align-items-center justify-content-center p-3"
+                    style="width:260px;height:260px;"
                 >
 
-                    <div>
-
-                        <i
-                            class="bi bi-qr-code"
-                            style="font-size:8rem;"
-                        ></i>
-
-                        <div class="small text-muted mt-2">
-                            QR pendiente de generar
-                        </div>
-
-                    </div>
+                    {!!
+                        \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
+                            ->size(220)
+                            ->margin(1)
+                            ->errorCorrection('H')
+                            ->generate($urlVerificacion)
+                    !!}
 
                 </div>
 
@@ -77,22 +82,37 @@
                 </h5>
 
                 <div class="text-muted mb-4">
-                    Identificador interno SICA
+                    QR de verificación pública UCD
                 </div>
 
 
-                <div class="alert alert-light border text-start mb-0">
+                <div class="alert alert-success border text-start">
 
-                    <div class="small text-muted mb-1">
-                        Token de verificación
+                    <div class="fw-bold mb-1">
+                        <i class="bi bi-shield-check me-2"></i>
+                        QR activo
                     </div>
 
-                    <code
-                        class="d-block text-break"
-                        id="tokenQr"
+                    <div class="small">
+                        Al escanear este código se abrirá la consulta pública
+                        del vehículo utilizando su identificador seguro.
+                    </div>
+
+                </div>
+
+
+                <div class="border rounded-3 p-3 text-start">
+
+                    <div class="small text-muted mb-1">
+                        Dirección de verificación
+                    </div>
+
+                    <div
+                        class="small text-break fw-semibold"
+                        id="urlVerificacion"
                     >
-                        {{ $registro->token_qr ?? 'Sin token generado' }}
-                    </code>
+                        {{ $urlVerificacion }}
+                    </div>
 
                 </div>
 
@@ -103,6 +123,7 @@
     </div>
 
 
+    {{-- DATOS --}}
     <div class="col-12 col-lg-7">
 
         <div class="card card-sica mb-4">
@@ -114,7 +135,7 @@
                 </h5>
 
                 <p class="text-muted small mb-0">
-                    Información asociada al identificador.
+                    Información relacionada con el código QR.
                 </p>
 
             </div>
@@ -158,7 +179,7 @@
                         </div>
 
                         <div class="fw-bold">
-                            {{ $registro->anio ?? $registro->año ?? 'No registrado' }}
+                            {{ $registro->anio ?? 'No registrado' }}
                         </div>
 
                     </div>
@@ -200,7 +221,6 @@
                                 'baja' => 'dark',
 
                                 default => 'secondary',
-
                             };
 
                         @endphp
@@ -213,9 +233,7 @@
 
 
                     <div class="col-12">
-
                         <hr>
-
                     </div>
 
 
@@ -226,7 +244,7 @@
                         </div>
 
                         <div class="fw-bold text-break">
-                            {{ $registro->vin ?? $registro->VIN ?? 'No registrado' }}
+                            {{ $registro->vin ?? 'No registrado' }}
                         </div>
 
                     </div>
@@ -281,7 +299,11 @@
 
                             @if(!empty($registro->vigencia))
 
-                                {{ \Carbon\Carbon::parse($registro->vigencia)->format('d/m/Y') }}
+                                {{
+                                    \Carbon\Carbon::parse(
+                                        $registro->vigencia
+                                    )->format('d/m/Y')
+                                }}
 
                             @else
 
@@ -300,6 +322,7 @@
         </div>
 
 
+        {{-- TITULAR --}}
         <div class="card card-sica">
 
             <div class="card-header bg-white border-0 pt-4 px-4">
@@ -383,11 +406,13 @@
         <div>
 
             <div class="fw-bold">
-                Siguiente etapa del QR
+                Verificación pública
             </div>
 
             <div class="small">
-                Esta pantalla ya deja preparado el vehículo y su token. Después conectaremos el token con un QR real y una página pública de verificación, sin exponer directamente el ID interno del registro.
+                El QR dirige a una página pública de SICA mediante un token
+                aleatorio. El ID interno del vehículo y los datos privados
+                del afiliado no se incluyen en el código.
             </div>
 
         </div>
