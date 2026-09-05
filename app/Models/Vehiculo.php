@@ -54,4 +54,15 @@ class Vehiculo extends Model
             'afiliado_id'
         );
     }
+
+    /**
+     * Documentos que forman parte del expediente del vehículo.
+     */
+    public function documentos()
+    {
+        return $this->hasMany(
+            DocumentoVehiculo::class,
+            'vehiculo_id'
+        );
+    }
 }

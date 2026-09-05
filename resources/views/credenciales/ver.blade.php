@@ -1,347 +1,833 @@
 @extends('layouts.sica')
 
-@section('titulo', 'Credencial')
+@section('titulo', 'Credencial de afiliación')
 
 @section('contenido')
 
 @php
     $registro = $credencial ?? null;
+    $afiliado = $registro?->afiliado ?? null;
 
-    $afiliado =
-        $registro->afiliado
-        ?? $registro->afiliacion
-        ?? null;
+    $estatusOriginal = strtolower($registro->estatus ?? 'activa');
+    $estatusVisual = $estatusOriginal;
 
-    $estadoCredencial =
-        strtolower(
-            $registro->estatus
-            ?? $registro->estado
-            ?? 'activa'
-        );
+    if (
+        $estatusOriginal === 'activa'
+        && !empty($registro->vigencia)
+        && \Carbon\Carbon::parse($registro->vigencia)->isPast()
+    ) {
+        $estatusVisual = 'vencida';
+    }
+
+    $estatusTexto = match($estatusVisual) {
+        'activa' => 'ACTIVA',
+        'vencida' => 'VENCIDA',
+        'cancelada' => 'CANCELADA',
+        default => strtoupper($estatusVisual),
+    };
+
+    $estatusClase = match($estatusVisual) {
+        'activa' => 'estado-activa',
+        'vencida' => 'estado-vencida',
+        'cancelada' => 'estado-cancelada',
+        default => 'estado-neutro',
+    };
+
+    $fechaVigencia = !empty($registro->vigencia)
+        ? \Carbon\Carbon::parse($registro->vigencia)->format('d/m/Y')
+        : 'Sin definir';
+
+    $fechaEmision = !empty($registro->created_at)
+        ? \Carbon\Carbon::parse($registro->created_at)->format('d/m/Y')
+        : now()->format('d/m/Y');
+
+    /*
+    |--------------------------------------------------------------------------
+    | URL PÚBLICA DE VERIFICACIÓN
+    |--------------------------------------------------------------------------
+    |
+    | Se genera con APP_URL + token único.
+    | Así evitamos colocar el token como información visible en la credencial.
+    |
+    */
+
+    $urlVerificacion = null;
 
     if (
         $registro
-        && !empty($registro->vigencia)
-        && \Carbon\Carbon::parse($registro->vigencia)->isPast()
-        && $estadoCredencial === 'activa'
+        && !empty($registro->token_qr)
     ) {
-        $estadoCredencial = 'vencida';
+        $urlVerificacion =
+            rtrim(config('app.url'), '/')
+            . '/verificar/credencial/'
+            . $registro->token_qr;
     }
-
-    $badgeCredencial = match($estadoCredencial) {
-        'activa' => 'success',
-        'vencida' => 'warning',
-        'cancelada' => 'danger',
-        default => 'secondary',
-    };
 @endphp
 
 
-<div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-3">
+<style>
+    :root {
+        --ucd-vino: #651522;
+        --ucd-dorado: #a9792f;
+        --ucd-texto: #391f1c;
+    }
 
-    <div>
-        <h1>Credencial de afiliación</h1>
-        <p>Consulta de la identificación emitida dentro de SICA.</p>
-    </div>
+    .credencial-page {
+        max-width: 1250px;
+        margin: 0 auto;
+    }
 
-    <div class="d-flex gap-2 flex-wrap">
+    .credencial-shell {
+        display: flex;
+        justify-content: center;
+        padding: 20px 0 25px;
+    }
 
-        <a
-            href="{{ url('/credenciales') }}"
-            class="btn btn-outline-secondary"
-        >
-            <i class="bi bi-arrow-left me-2"></i>
-            Regresar
-        </a>
+    .credencial-ucd {
+        position: relative;
 
-        @if(isset($registro->id))
+        width: 100%;
+        max-width: 1050px;
 
-            <a
-                href="{{ url('/credenciales/' . $registro->id . '/imprimir') }}"
-                class="btn btn-sica"
-            >
-                <i class="bi bi-printer me-2"></i>
-                Imprimir
-            </a>
+        aspect-ratio: 3 / 2;
 
-        @endif
+        overflow: hidden;
 
-    </div>
+        border-radius: 14px;
 
-</div>
+        background-image:
+            url('{{ asset('images/fondo-credencial-ucd-2026.png') }}');
+
+        background-size: 100% 100%;
+        background-position: center;
+        background-repeat: no-repeat;
+
+        box-shadow:
+            0 20px 55px rgba(49, 31, 24, 0.20),
+            0 4px 12px rgba(49, 31, 24, 0.10);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FOTO
+    |--------------------------------------------------------------------------
+    */
+
+    .foto-afiliado {
+        position: absolute;
+
+        left: 10.25%;
+        top: 41.0%;
+
+        width: 17.8%;
+        height: 29.5%;
+
+        z-index: 5;
+
+        overflow: hidden;
+
+        border-radius: 8px;
+
+        background:
+            rgba(250, 245, 232, 0.90);
+    }
+
+    .foto-afiliado img {
+        width: 100%;
+        height: 100%;
+
+        display: block;
+
+        object-fit: cover;
+        object-position: center top;
+    }
+
+    .foto-placeholder {
+        width: 100%;
+        height: 100%;
+
+        display: flex;
+        flex-direction: column;
+
+        align-items: center;
+        justify-content: center;
+
+        color: rgba(101, 21, 34, 0.55);
+
+        text-align: center;
+    }
+
+    .foto-placeholder i {
+        font-size: clamp(28px, 4vw, 55px);
+    }
+
+    .foto-placeholder span {
+        margin-top: 5px;
+
+        font-size: clamp(7px, 0.8vw, 11px);
+
+        font-weight: 800;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALORES
+    |--------------------------------------------------------------------------
+    */
+
+    .valor {
+        position: absolute;
+
+        z-index: 6;
+
+        color: var(--ucd-texto);
+
+        font-family:
+            Arial,
+            Helvetica,
+            sans-serif;
+
+        font-weight: 700;
+
+        line-height: 1.05;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | NOMBRE
+    |--------------------------------------------------------------------------
+    */
+
+    .valor-nombre {
+        left: 31.3%;
+        top: 39.5%;
+
+        width: 31%;
+        height: 8%;
+
+        display: flex;
+        align-items: flex-start;
+
+        font-size: clamp(11px, 1.55vw, 22px);
+
+        line-height: 1.02;
+
+        font-weight: 900;
+
+        text-transform: uppercase;
+
+        white-space: normal;
+
+        overflow: hidden;
+
+        text-overflow: clip;
+
+        word-break: normal;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | DOMICILIO
+    |--------------------------------------------------------------------------
+    */
+
+    .valor-domicilio {
+        left: 31.3%;
+        top: 49.5%;
+
+        width: 29.5%;
+
+        font-size: clamp(9px, 1.2vw, 17px);
+
+        white-space: nowrap;
+
+        overflow: hidden;
+
+        text-overflow: ellipsis;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | MUNICIPIO
+    |--------------------------------------------------------------------------
+    */
+
+    .valor-municipio {
+        left: 31.3%;
+        top: 63.3%;
+
+        width: 16%;
+
+        font-size: clamp(8px, 1.05vw, 15px);
+
+        text-transform: uppercase;
+
+        white-space: nowrap;
+
+        overflow: hidden;
+
+        text-overflow: ellipsis;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ESTADO
+    |--------------------------------------------------------------------------
+    */
+
+    .valor-estado {
+        left: 49.4%;
+        top: 63.3%;
+
+        width: 13%;
+
+        font-size: clamp(8px, 1.05vw, 15px);
+
+        text-transform: uppercase;
+
+        white-space: nowrap;
+
+        overflow: hidden;
+
+        text-overflow: ellipsis;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | VIGENCIA
+    |--------------------------------------------------------------------------
+    */
+
+    .valor-vigencia {
+        left: 44.5%;
+        top: 78.1%;
+
+        width: 11.5%;
+
+        text-align: center;
+
+        font-size: clamp(8px, 1vw, 14px);
+
+        font-weight: 900;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | EMISIÓN
+    |--------------------------------------------------------------------------
+    */
+
+    .valor-emision {
+        left: 61.7%;
+        top: 78.1%;
+
+        width: 11.5%;
+
+        text-align: center;
+
+        font-size: clamp(8px, 1vw, 14px);
+
+        font-weight: 900;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FOLIO
+    |--------------------------------------------------------------------------
+    */
+
+    .valor-folio {
+        left: 49.5%;
+        top: 87.0%;
+
+        width: 19%;
+
+        text-align: center;
+
+        color: var(--ucd-vino);
+
+        font-size: clamp(8px, 1vw, 14px);
+
+        font-weight: 900;
+
+        letter-spacing: 0.04em;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ESTADO DE LA CREDENCIAL
+    |--------------------------------------------------------------------------
+    */
+
+    .estado-credencial {
+        position: absolute;
+
+        z-index: 8;
+
+        right: 7.8%;
+        bottom: 7.8%;
+
+        min-width: 78px;
+
+        padding:
+            5px
+            10px;
+
+        border-radius: 999px;
+
+        text-align: center;
+
+        font-family:
+            Arial,
+            Helvetica,
+            sans-serif;
+
+        font-size: clamp(7px, 0.8vw, 11px);
+
+        font-weight: 900;
+
+        letter-spacing: 0.08em;
+    }
+
+    .estado-activa {
+        color: #215c38;
+
+        background:
+            rgba(231, 245, 234, 0.94);
+
+        border:
+            1px solid rgba(75, 139, 91, 0.55);
+    }
+
+    .estado-vencida {
+        color: #775312;
+
+        background:
+            rgba(255, 242, 204, 0.95);
+
+        border:
+            1px solid rgba(183, 140, 48, 0.55);
+    }
+
+    .estado-cancelada {
+        color: #7a2731;
+
+        background:
+            rgba(248, 225, 228, 0.95);
+
+        border:
+            1px solid rgba(160, 64, 76, 0.50);
+    }
+
+    .estado-neutro {
+        color: #555;
+
+        background:
+            rgba(240, 240, 240, 0.95);
+
+        border:
+            1px solid #bbb;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | QR DE VERIFICACIÓN
+    |--------------------------------------------------------------------------
+    */
+
+    .verificacion-panel {
+        max-width: 1050px;
+
+        margin:
+            5px auto 25px;
+
+        padding:
+            22px;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: space-between;
+
+        gap: 25px;
+
+        border:
+            1px solid rgba(101, 21, 34, 0.15);
+
+        border-radius:
+            16px;
+
+        background:
+            linear-gradient(
+                135deg,
+                #fffdf9,
+                #f8f1e7
+            );
+
+        box-shadow:
+            0 5px 18px
+            rgba(49, 31, 24, 0.07);
+    }
+
+    .verificacion-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .verificacion-titulo {
+        display: flex;
+
+        align-items: center;
+
+        gap: 9px;
+
+        margin-bottom:
+            8px;
+
+        color:
+            var(--ucd-vino);
+
+        font-size:
+            18px;
+
+        font-weight:
+            900;
+    }
+
+    .verificacion-texto {
+        max-width:
+            650px;
+
+        color:
+            #6c5a50;
+
+        font-size:
+            13px;
+
+        line-height:
+            1.55;
+    }
+
+    .verificacion-folio {
+        margin-top:
+            10px;
+
+        color:
+            var(--ucd-texto);
+
+        font-size:
+            12px;
+
+        font-weight:
+            800;
+    }
+
+    .qr-contenedor {
+        flex:
+            0 0 auto;
+
+        padding:
+            10px;
+
+        display:
+            flex;
+
+        align-items:
+            center;
+
+        justify-content:
+            center;
+
+        border:
+            2px solid
+            rgba(101, 21, 34, .22);
+
+        border-radius:
+            12px;
+
+        background:
+            #ffffff;
+    }
+
+    .qr-contenedor svg {
+        display:
+            block;
+
+        width:
+            145px;
+
+        height:
+            145px;
+    }
+
+    .qr-no-disponible {
+        width:
+            145px;
+
+        height:
+            145px;
+
+        display:
+            flex;
+
+        flex-direction:
+            column;
+
+        align-items:
+            center;
+
+        justify-content:
+            center;
+
+        gap:
+            7px;
+
+        text-align:
+            center;
+
+        color:
+            #8a7770;
+
+        font-size:
+            11px;
+
+        font-weight:
+            700;
+    }
+
+    .qr-no-disponible i {
+        font-size:
+            35px;
+
+        color:
+            var(--ucd-vino);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ACCIONES
+    |--------------------------------------------------------------------------
+    */
+
+    .acciones-credencial {
+        display: flex;
+
+        align-items: center;
+        justify-content: space-between;
+
+        flex-wrap: wrap;
+
+        gap: 12px;
+
+        margin-top: 15px;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | RESPONSIVE
+    |--------------------------------------------------------------------------
+    */
+
+    @media (max-width: 850px) {
+
+        .credencial-shell {
+            justify-content: flex-start;
+
+            overflow-x: auto;
+
+            padding-bottom: 15px;
+        }
+
+        .credencial-ucd {
+            min-width: 760px;
+        }
+
+        .verificacion-panel {
+            align-items:
+                flex-start;
+        }
+    }
+
+    @media (max-width: 650px) {
+
+        .verificacion-panel {
+            flex-direction:
+                column;
+
+            align-items:
+                center;
+
+            text-align:
+                center;
+        }
+
+        .verificacion-titulo {
+            justify-content:
+                center;
+        }
+
+        .verificacion-folio {
+            text-align:
+                center;
+        }
+
+        .qr-contenedor svg {
+            width:
+                170px;
+
+            height:
+                170px;
+        }
+
+        .qr-no-disponible {
+            width:
+                170px;
+
+            height:
+                170px;
+        }
+    }
+</style>
 
 
-@if($registro)
+<div class="credencial-page">
 
-<div class="row g-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
 
-    <div class="col-12 col-xl-8">
+        <div>
 
-        <div class="card card-sica">
+            <h4 class="fw-bold mb-1">
+                Credencial de afiliación
+            </h4>
 
-            <div class="card-body p-4 p-md-5">
+            <div class="text-muted small">
+                UCD Meseta Purépecha · SICA
+            </div>
 
-                <div
-                    class="border rounded-4 overflow-hidden"
-                    style="max-width:760px;margin:auto;"
+        </div>
+
+
+        <div class="d-flex gap-2">
+
+            @if($afiliado)
+
+                <a
+                    href="{{ url('/afiliaciones/' . $afiliado->id) }}"
+                    class="btn btn-outline-secondary"
                 >
+                    <i class="bi bi-arrow-left me-1"></i>
+                    Regresar
+                </a>
 
-                    <div
-                        class="p-4 text-white"
-                        style="background:linear-gradient(135deg,#0f5132,#198754);"
-                    >
+            @endif
 
-                        <div class="d-flex justify-content-between align-items-start gap-3">
 
-                            <div>
+            @if($registro)
 
-                                <div class="small opacity-75">
-                                    Sistema Integral de Control y Afiliación
-                                </div>
+                <a
+                    href="{{ url('/credenciales/' . $registro->id . '/imprimir') }}"
+                    class="btn btn-sica"
+                >
+                    <i class="bi bi-printer me-1"></i>
+                    Imprimir
+                </a>
 
-                                <h2 class="fw-bold mb-0">
-                                    SICA
-                                </h2>
-
-                            </div>
-
-
-                            <div class="text-end">
-
-                                <i class="bi bi-shield-check fs-1"></i>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="p-4 bg-white">
-
-                        <div class="row g-4 align-items-center">
-
-                            <div class="col-12 col-md-4 text-center">
-
-                                <div
-                                    class="rounded-4 border bg-light d-flex align-items-center justify-content-center mx-auto"
-                                    style="width:160px;height:190px;"
-                                >
-                                    <i class="bi bi-person fs-1 text-secondary"></i>
-                                </div>
-
-                            </div>
-
-
-                            <div class="col-12 col-md-8">
-
-                                <div class="mb-3">
-
-                                    <div class="text-muted small">
-                                        Nombre
-                                    </div>
-
-                                    <div class="fs-4 fw-bold">
-                                        {{ $afiliado->nombre ?? $registro->nombre ?? 'Sin nombre' }}
-                                    </div>
-
-                                </div>
-
-
-                                <div class="row g-3">
-
-                                    <div class="col-12 col-sm-6">
-
-                                        <div class="text-muted small">
-                                            Folio
-                                        </div>
-
-                                        <div class="fw-bold text-success">
-                                            {{ $registro->folio_credencial ?? 'Sin folio' }}
-                                        </div>
-
-                                    </div>
-
-
-                                    <div class="col-12 col-sm-6">
-
-                                        <div class="text-muted small">
-                                            Estado
-                                        </div>
-
-                                        <span class="badge text-bg-{{ $badgeCredencial }}">
-                                            {{ ucfirst($estadoCredencial) }}
-                                        </span>
-
-                                    </div>
-
-
-                                    <div class="col-12 col-sm-6">
-
-                                        <div class="text-muted small">
-                                            CURP
-                                        </div>
-
-                                        <div class="fw-bold">
-                                            {{ $afiliado->curp ?? $registro->curp ?? 'No registrada' }}
-                                        </div>
-
-                                    </div>
-
-
-                                    <div class="col-12 col-sm-6">
-
-                                        <div class="text-muted small">
-                                            Municipio
-                                        </div>
-
-                                        <div class="fw-bold">
-                                            {{ $afiliado->municipio ?? $registro->municipio ?? 'No registrado' }}
-                                        </div>
-
-                                    </div>
-
-
-                                    <div class="col-12 col-sm-6">
-
-                                        <div class="text-muted small">
-                                            Vigencia
-                                        </div>
-
-                                        <div class="fw-bold">
-
-                                            @if(!empty($registro->vigencia))
-
-                                                {{ \Carbon\Carbon::parse($registro->vigencia)->format('d/m/Y') }}
-
-                                            @else
-
-                                                No registrada
-
-                                            @endif
-
-                                        </div>
-
-                                    </div>
-
-
-                                    <div class="col-12 col-sm-6">
-
-                                        <div class="text-muted small">
-                                            Emisión
-                                        </div>
-
-                                        <div class="fw-bold">
-
-                                            @if(!empty($registro->created_at))
-
-                                                {{ \Carbon\Carbon::parse($registro->created_at)->format('d/m/Y') }}
-
-                                            @else
-
-                                                Sin fecha
-
-                                            @endif
-
-                                        </div>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="border-top p-3 bg-light text-center">
-
-                        <small class="text-muted">
-                            La presente acredita al portador como miembro activo de esta organización.
-                        </small>
-
-                    </div>
-
-                </div>
-
-            </div>
+            @endif
 
         </div>
 
     </div>
 
 
-    <div class="col-12 col-xl-4">
+    @if(!$registro || !$afiliado)
 
-        <div class="card card-sica mb-4">
+        <div class="alert alert-danger">
 
-            <div class="card-header bg-white border-0 pt-4 px-4">
+            <i class="bi bi-exclamation-triangle me-2"></i>
 
-                <h5 class="fw-bold mb-1">
-                    Información de control
-                </h5>
+            No fue posible cargar la información de la credencial.
 
-                <p class="text-muted small mb-0">
-                    Datos internos de la credencial.
-                </p>
+        </div>
 
-            </div>
+    @else
 
+        <div class="credencial-shell">
 
-            <div class="card-body p-4">
+            <div class="credencial-ucd">
 
-                <div class="py-3 border-bottom">
+                {{-- FOTO --}}
+                <div class="foto-afiliado">
 
-                    <div class="text-muted small">
-                        Folio de credencial
-                    </div>
+                    @if(!empty($afiliado->foto))
 
-                    <div class="fw-bold text-success">
-                        {{ $registro->folio_credencial ?? 'No asignado' }}
-                    </div>
+                        <img
+                            src="{{ asset('storage/' . $afiliado->foto) }}"
+                            alt="Fotografía de {{ $afiliado->nombre }}"
+                        >
 
-                </div>
+                    @else
 
+                        <div class="foto-placeholder">
 
-                <div class="py-3 border-bottom">
+                            <i class="bi bi-person-bounding-box"></i>
 
-                    <div class="text-muted small">
-                        Estado
-                    </div>
+                            <span>
+                                SIN FOTOGRAFÍA
+                            </span>
 
-                    <div class="mt-1">
+                        </div>
 
-                        <span class="badge text-bg-{{ $badgeCredencial }}">
-                            {{ ucfirst($estadoCredencial) }}
-                        </span>
-
-                    </div>
+                    @endif
 
                 </div>
 
 
-                <div class="py-3">
+                {{-- NOMBRE --}}
+                <div class="valor valor-nombre">
+                    {{ $afiliado->nombre }}
+                </div>
 
-                    <div class="text-muted small">
-                        Vigencia
-                    </div>
 
-                    <div class="fw-bold">
+                {{-- DOMICILIO --}}
+                <div class="valor valor-domicilio">
+                    {{ $afiliado->domicilio ?? 'No registrado' }}
+                </div>
 
-                        @if(!empty($registro->vigencia))
 
-                            {{ \Carbon\Carbon::parse($registro->vigencia)->format('d/m/Y') }}
+                {{-- MUNICIPIO --}}
+                <div class="valor valor-municipio">
+                    {{ $afiliado->municipio ?? 'No registrado' }}
+                </div>
 
-                        @else
 
-                            No registrada
+                {{-- ESTADO --}}
+                <div class="valor valor-estado">
+                    {{ $afiliado->estado ?? 'Michoacán' }}
+                </div>
 
-                        @endif
 
-                    </div>
+                {{-- VIGENCIA --}}
+                <div class="valor valor-vigencia">
+                    {{ $fechaVigencia }}
+                </div>
 
+
+                {{-- EMISIÓN --}}
+                <div class="valor valor-emision">
+                    {{ $fechaEmision }}
+                </div>
+
+
+                {{-- FOLIO --}}
+                <div class="valor valor-folio">
+                    {{ $registro->folio_credencial }}
+                </div>
+
+
+                {{-- ESTADO --}}
+                <div class="estado-credencial {{ $estatusClase }}">
+                    {{ $estatusTexto }}
                 </div>
 
             </div>
@@ -349,45 +835,54 @@
         </div>
 
 
-        <div class="card card-sica">
+        {{-- QR REAL DE VERIFICACIÓN --}}
+        <div class="verificacion-panel">
 
-            <div class="card-header bg-white border-0 pt-4 px-4">
+            <div class="verificacion-info">
 
-                <h5 class="fw-bold mb-1">
-                    Acciones
-                </h5>
+                <div class="verificacion-titulo">
 
-                <p class="text-muted small mb-0">
-                    Operaciones disponibles.
-                </p>
+                    <i class="bi bi-qr-code-scan"></i>
+
+                    Verificación electrónica SICA
+
+                </div>
+
+                <div class="verificacion-texto">
+
+                    Este código QR corresponde exclusivamente a esta
+                    credencial. Al escanearlo se consulta directamente
+                    su estado y vigencia en el sistema SICA.
+
+                </div>
+
+                <div class="verificacion-folio">
+
+                    Folio:
+                    {{ $registro->folio_credencial }}
+
+                </div>
 
             </div>
 
 
-            <div class="card-body p-4 d-grid gap-2">
+            <div class="qr-contenedor">
 
-                @if(isset($registro->id))
+                @if($urlVerificacion)
 
-                    <a
-                        href="{{ url('/credenciales/' . $registro->id . '/imprimir') }}"
-                        class="btn btn-outline-success"
-                    >
-                        <i class="bi bi-printer me-2"></i>
-                        Imprimir credencial
-                    </a>
+                    {!! QrCode::size(220)
+                        ->margin(1)
+                        ->generate($urlVerificacion) !!}
 
-                @endif
+                @else
 
+                    <div class="qr-no-disponible">
 
-                @if(isset($afiliado->id))
+                        <i class="bi bi-qr-code"></i>
 
-                    <a
-                        href="{{ url('/afiliaciones/' . $afiliado->id) }}"
-                        class="btn btn-outline-primary"
-                    >
-                        <i class="bi bi-person me-2"></i>
-                        Ver afiliado
-                    </a>
+                        QR no disponible
+
+                    </div>
 
                 @endif
 
@@ -395,40 +890,39 @@
 
         </div>
 
-    </div>
 
-</div>
+        <div class="acciones-credencial">
+
+            <div class="text-muted small">
+                Credencial UCD 2026 · Sistema SICA
+            </div>
 
 
-@else
+            <div class="d-flex gap-2">
 
-<div class="card card-sica">
+                <a
+                    href="{{ url('/afiliaciones/' . $afiliado->id) }}"
+                    class="btn btn-outline-secondary"
+                >
+                    <i class="bi bi-person-vcard me-1"></i>
+                    Ver expediente
+                </a>
 
-    <div class="card-body text-center py-5">
 
-        <div class="fs-1 text-danger mb-3">
-            <i class="bi bi-exclamation-triangle"></i>
+                <a
+                    href="{{ url('/credenciales/' . $registro->id . '/imprimir') }}"
+                    class="btn btn-sica"
+                >
+                    <i class="bi bi-printer me-1"></i>
+                    Imprimir credencial
+                </a>
+
+            </div>
+
         </div>
 
-        <h4 class="fw-bold">
-            Credencial no encontrada
-        </h4>
-
-        <p class="text-muted">
-            No se encontró la credencial solicitada.
-        </p>
-
-        <a
-            href="{{ url('/credenciales') }}"
-            class="btn btn-sica"
-        >
-            Regresar a credenciales
-        </a>
-
-    </div>
+    @endif
 
 </div>
-
-@endif
 
 @endsection

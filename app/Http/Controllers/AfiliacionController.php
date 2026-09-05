@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Afiliacion;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class AfiliacionController extends Controller
@@ -38,6 +39,13 @@ class AfiliacionController extends Controller
                 'required',
                 'string',
                 'max:150',
+            ],
+
+            'foto' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:5120',
             ],
 
             'curp' => [
@@ -128,6 +136,21 @@ class AfiliacionController extends Controller
 
         /*
         |--------------------------------------------------------------------------
+        | GUARDAR FOTOGRAFÍA
+        |--------------------------------------------------------------------------
+        */
+
+        $rutaFoto = null;
+
+        if ($request->hasFile('foto')) {
+            $rutaFoto = $request
+                ->file('foto')
+                ->store('afiliados/fotos', 'public');
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
         | CREAR AFILIADO
         |--------------------------------------------------------------------------
         */
@@ -137,6 +160,8 @@ class AfiliacionController extends Controller
         $afiliacion->folio_afiliado = $folio;
 
         $afiliacion->nombre = $datos['nombre'];
+
+        $afiliacion->foto = $rutaFoto;
 
         $afiliacion->curp =
             $datos['curp'] ?? null;
@@ -224,6 +249,13 @@ class AfiliacionController extends Controller
                 'max:150',
             ],
 
+            'foto' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:5120',
+            ],
+
             'curp' => [
                 'nullable',
                 'string',
@@ -287,6 +319,27 @@ class AfiliacionController extends Controller
                 'date',
             ],
         ]);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | ACTUALIZAR FOTOGRAFÍA
+        |--------------------------------------------------------------------------
+        */
+
+        if ($request->hasFile('foto')) {
+
+            if (
+                !empty($afiliado->foto)
+                && Storage::disk('public')->exists($afiliado->foto)
+            ) {
+                Storage::disk('public')->delete($afiliado->foto);
+            }
+
+            $afiliado->foto = $request
+                ->file('foto')
+                ->store('afiliados/fotos', 'public');
+        }
 
 
         /*

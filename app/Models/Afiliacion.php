@@ -14,6 +14,7 @@ class Afiliacion extends Model
     protected $fillable = [
         'folio_afiliado',
         'nombre',
+        'foto',
         'ine',
         'curp',
         'rfc',

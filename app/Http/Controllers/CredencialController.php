@@ -27,7 +27,7 @@ class CredencialController extends Controller
 
 
     /**
-     * Mostrar formulario para generar credencial.
+     * Mostrar formulario para crear credencial.
      */
     public function create()
     {
@@ -68,7 +68,7 @@ class CredencialController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | GENERAR FOLIO DE CREDENCIAL
+        | GENERAR FOLIO
         |--------------------------------------------------------------------------
         */
 
@@ -89,7 +89,7 @@ class CredencialController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | TOKEN DE VERIFICACIÓN
+        | TOKEN ÚNICO PARA QR
         |--------------------------------------------------------------------------
         */
 
@@ -133,7 +133,7 @@ class CredencialController extends Controller
 
 
     /**
-     * Mostrar credencial.
+     * Mostrar credencial dentro del sistema.
      */
     public function show($id)
     {
@@ -148,7 +148,7 @@ class CredencialController extends Controller
 
 
     /**
-     * Vista para impresión.
+     * Mostrar versión para impresión individual.
      */
     public function imprimir($id)
     {
@@ -157,6 +157,119 @@ class CredencialController extends Controller
 
         return view(
             'credenciales.imprimir',
+            compact('credencial')
+        );
+    }
+
+
+    /**
+     * Imprimir varias credenciales en hoja oficio.
+     *
+     * Puede recibir:
+     *
+     * ?credenciales[]=1&credenciales[]=2
+     *
+     * Si no se envían IDs, carga todas las credenciales.
+     */
+    public function imprimirHoja(Request $request)
+    {
+        /*
+        |--------------------------------------------------------------------------
+        | CREDENCIALES SELECCIONADAS
+        |--------------------------------------------------------------------------
+        */
+
+        $ids = $request->input(
+            'credenciales',
+            []
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | NORMALIZAR IDS
+        |--------------------------------------------------------------------------
+        */
+
+        if (!is_array($ids)) {
+            $ids = [$ids];
+        }
+
+        $ids = collect($ids)
+            ->filter(
+                fn ($id) =>
+                    is_numeric($id)
+                    && (int) $id > 0
+            )
+            ->map(
+                fn ($id) =>
+                    (int) $id
+            )
+            ->unique()
+            ->values()
+            ->all();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | CONSULTA
+        |--------------------------------------------------------------------------
+        */
+
+        $consulta = Credencial::with('afiliado');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | SI HAY SELECCIÓN, SOLO CARGAR ESAS CREDENCIALES
+        |--------------------------------------------------------------------------
+        */
+
+        if (!empty($ids)) {
+            $consulta->whereIn(
+                'id',
+                $ids
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | OBTENER CREDENCIALES
+        |--------------------------------------------------------------------------
+        */
+
+        $credenciales = $consulta
+            ->orderBy('id')
+            ->get();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | VISTA DE HOJA OFICIO
+        |--------------------------------------------------------------------------
+        */
+
+        return view(
+            'credenciales.imprimir-hoja',
+            compact('credenciales')
+        );
+    }
+
+
+    /**
+     * Verificación pública mediante token QR.
+     *
+     * No requiere inicio de sesión.
+     */
+    public function verificacionPublica($token)
+    {
+        $credencial = Credencial::with('afiliado')
+            ->where('token_qr', $token)
+            ->firstOrFail();
+
+        return view(
+            'credenciales.verificacion-publica',
             compact('credencial')
         );
     }

@@ -6,6 +6,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AfiliacionController;
 use App\Http\Controllers\VehiculoController;
+use App\Http\Controllers\DocumentoVehiculoController;
 use App\Http\Controllers\CredencialController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\ConfiguracionController;
@@ -22,10 +23,29 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+
+/*
+|--------------------------------------------------------------------------
+| VERIFICACIÓN PÚBLICA VEHICULAR
+|--------------------------------------------------------------------------
+*/
+
 Route::get(
     '/verificar/vehiculo/{token}',
     [VehiculoController::class, 'verificacionPublica']
 )->name('vehiculos.verificacion.publica');
+
+
+/*
+|--------------------------------------------------------------------------
+| VERIFICACIÓN PÚBLICA DE CREDENCIAL
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/verificar/credencial/{token}',
+    [CredencialController::class, 'verificacionPublica']
+)->name('credenciales.verificacion.publica');
 
 
 /*
@@ -124,6 +144,43 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | EXPEDIENTE DOCUMENTAL DEL VEHÍCULO
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post(
+        '/vehiculos/{vehiculo}/documentos',
+        [DocumentoVehiculoController::class, 'store']
+    )->whereNumber('vehiculo')
+        ->name('vehiculos.documentos.store');
+
+    Route::get(
+        '/documentos-vehiculo/{documento}/ver',
+        [DocumentoVehiculoController::class, 'ver']
+    )->whereNumber('documento')
+        ->name('vehiculos.documentos.ver');
+
+    Route::get(
+        '/documentos-vehiculo/{documento}/descargar',
+        [DocumentoVehiculoController::class, 'descargar']
+    )->whereNumber('documento')
+        ->name('vehiculos.documentos.descargar');
+
+    Route::put(
+        '/documentos-vehiculo/{documento}',
+        [DocumentoVehiculoController::class, 'update']
+    )->whereNumber('documento')
+        ->name('vehiculos.documentos.update');
+
+    Route::delete(
+        '/documentos-vehiculo/{documento}',
+        [DocumentoVehiculoController::class, 'destroy']
+    )->whereNumber('documento')
+        ->name('vehiculos.documentos.destroy');
+
+
+    /*
+    |--------------------------------------------------------------------------
     | CREDENCIALES
     |--------------------------------------------------------------------------
     */
@@ -136,6 +193,22 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/credenciales', [CredencialController::class, 'store'])
         ->name('credenciales.store');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | IMPRESIÓN DE CREDENCIALES EN HOJA OFICIO
+    |--------------------------------------------------------------------------
+    |
+    | Esta ruta debe permanecer antes de /credenciales/{id}.
+    |
+    */
+
+    Route::get(
+        '/credenciales/imprimir-hoja',
+        [CredencialController::class, 'imprimirHoja']
+    )->name('credenciales.imprimir-hoja');
+
 
     Route::get('/credenciales/{id}', [CredencialController::class, 'show'])
         ->whereNumber('id')
@@ -181,7 +254,9 @@ Route::middleware('auth')->group(function () {
 
 
     /*
-    | Administradores
+    |--------------------------------------------------------------------------
+    | ADMINISTRADORES
+    |--------------------------------------------------------------------------
     */
 
     Route::get(
@@ -191,7 +266,9 @@ Route::middleware('auth')->group(function () {
 
 
     /*
-    | Coordinadores
+    |--------------------------------------------------------------------------
+    | COORDINADORES
+    |--------------------------------------------------------------------------
     */
 
     Route::get(
@@ -201,7 +278,9 @@ Route::middleware('auth')->group(function () {
 
 
     /*
-    | Folios
+    |--------------------------------------------------------------------------
+    | FOLIOS
+    |--------------------------------------------------------------------------
     */
 
     Route::get(
@@ -217,7 +296,9 @@ Route::middleware('auth')->group(function () {
 
 
     /*
-    | Parámetros
+    |--------------------------------------------------------------------------
+    | PARÁMETROS
+    |--------------------------------------------------------------------------
     */
 
     Route::get(
@@ -233,7 +314,9 @@ Route::middleware('auth')->group(function () {
 
 
     /*
-    | Permisos
+    |--------------------------------------------------------------------------
+    | PERMISOS
+    |--------------------------------------------------------------------------
     */
 
     Route::get(
@@ -248,7 +331,9 @@ Route::middleware('auth')->group(function () {
 
 
     /*
-    | Respaldos
+    |--------------------------------------------------------------------------
+    | RESPALDOS
+    |--------------------------------------------------------------------------
     */
 
     Route::get(

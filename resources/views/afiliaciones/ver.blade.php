@@ -212,120 +212,168 @@
 
         <div class="card-body">
 
-            <div class="row g-3">
+            <div class="row g-4">
 
-                <div class="col-md-6">
+                {{-- FOTOGRAFÍA --}}
+                <div class="col-12 col-md-auto">
 
-                    <div class="small text-muted">
-                        Nombre completo
-                    </div>
+                    <div
+                        class="border rounded-4 bg-light overflow-hidden d-flex align-items-center justify-content-center"
+                        style="width:150px;height:180px;"
+                    >
 
-                    <div class="fw-semibold">
-                        {{ $registro->nombre ?? 'No registrado' }}
-                    </div>
+                        @if(!empty($registro->foto))
 
-                </div>
+                            <img
+                                src="{{ asset('storage/' . $registro->foto) }}"
+                                alt="Fotografía de {{ $registro->nombre }}"
+                                style="
+                                    width:100%;
+                                    height:100%;
+                                    object-fit:cover;
+                                "
+                            >
 
+                        @else
 
-                <div class="col-md-3">
+                            <div class="text-center text-secondary px-3">
 
-                    <div class="small text-muted">
-                        Teléfono
-                    </div>
+                                <i class="bi bi-person-bounding-box fs-1"></i>
 
-                    <div class="fw-semibold">
-                        {{ $registro->telefono ?? 'No registrado' }}
-                    </div>
+                                <div class="small mt-2">
+                                    Sin fotografía
+                                </div>
 
-                </div>
+                            </div>
 
+                        @endif
 
-                <div class="col-md-3">
-
-                    <div class="small text-muted">
-                        INE
-                    </div>
-
-                    <div class="fw-semibold">
-                        {{ $registro->ine ?? 'No registrada' }}
-                    </div>
-
-                </div>
-
-
-                <div class="col-md-4">
-
-                    <div class="small text-muted">
-                        CURP
-                    </div>
-
-                    <div class="fw-semibold">
-                        {{ $registro->curp ?? 'No registrada' }}
                     </div>
 
                 </div>
 
 
-                <div class="col-md-4">
+                {{-- INFORMACIÓN --}}
+                <div class="col">
 
-                    <div class="small text-muted">
-                        RFC
-                    </div>
+                    <div class="row g-3">
 
-                    <div class="fw-semibold">
-                        {{ $registro->rfc ?? 'No registrado' }}
-                    </div>
+                        <div class="col-12 col-md-6">
 
-                </div>
+                            <div class="small text-muted">
+                                Nombre completo
+                            </div>
 
+                            <div class="fw-semibold">
+                                {{ $registro->nombre ?? 'No registrado' }}
+                            </div>
 
-                <div class="col-md-4">
-
-                    <div class="small text-muted">
-                        Correo
-                    </div>
-
-                    <div class="fw-semibold">
-                        {{ $registro->correo ?? 'No registrado' }}
-                    </div>
-
-                </div>
+                        </div>
 
 
-                <div class="col-md-6">
+                        <div class="col-12 col-md-3">
 
-                    <div class="small text-muted">
-                        Domicilio
-                    </div>
+                            <div class="small text-muted">
+                                Teléfono
+                            </div>
 
-                    <div class="fw-semibold">
-                        {{ $registro->domicilio ?? 'No registrado' }}
-                    </div>
+                            <div class="fw-semibold">
+                                {{ $registro->telefono ?? 'No registrado' }}
+                            </div>
 
-                </div>
-
-
-                <div class="col-md-3">
-
-                    <div class="small text-muted">
-                        Municipio
-                    </div>
-
-                    <div class="fw-semibold">
-                        {{ $registro->municipio ?? 'No registrado' }}
-                    </div>
-
-                </div>
+                        </div>
 
 
-                <div class="col-md-3">
+                        <div class="col-12 col-md-3">
 
-                    <div class="small text-muted">
-                        Estado
-                    </div>
+                            <div class="small text-muted">
+                                INE
+                            </div>
 
-                    <div class="fw-semibold">
-                        {{ $registro->estado ?? 'No registrado' }}
+                            <div class="fw-semibold">
+                                {{ $registro->ine ?? 'No registrada' }}
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-12 col-md-4">
+
+                            <div class="small text-muted">
+                                CURP
+                            </div>
+
+                            <div class="fw-semibold">
+                                {{ $registro->curp ?? 'No registrada' }}
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-12 col-md-4">
+
+                            <div class="small text-muted">
+                                RFC
+                            </div>
+
+                            <div class="fw-semibold">
+                                {{ $registro->rfc ?? 'No registrado' }}
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-12 col-md-4">
+
+                            <div class="small text-muted">
+                                Correo
+                            </div>
+
+                            <div class="fw-semibold">
+                                {{ $registro->correo ?? 'No registrado' }}
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-12 col-md-6">
+
+                            <div class="small text-muted">
+                                Domicilio
+                            </div>
+
+                            <div class="fw-semibold">
+                                {{ $registro->domicilio ?? 'No registrado' }}
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-12 col-md-3">
+
+                            <div class="small text-muted">
+                                Municipio
+                            </div>
+
+                            <div class="fw-semibold">
+                                {{ $registro->municipio ?? 'No registrado' }}
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-12 col-md-3">
+
+                            <div class="small text-muted">
+                                Estado
+                            </div>
+
+                            <div class="fw-semibold">
+                                {{ $registro->estado ?? 'No registrado' }}
+                            </div>
+
+                        </div>
+
                     </div>
 
                 </div>
